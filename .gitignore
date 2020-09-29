@@ -4,7 +4,7 @@
 *.pyc
 *.swp
 *.apk
-/test
+
 .DS_Store
 .atom/
 .buildlog/
@@ -31,6 +31,7 @@
 .packages
 .pub-cache/
 .pub/
+/test/
 /build/
 
 # Web related
