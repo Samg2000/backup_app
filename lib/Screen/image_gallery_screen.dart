@@ -5,12 +5,28 @@ import 'package:backup_app/Screen/full_screen_image_screen.dart';
 import 'package:backup_app/Screen/upload_every_image.dart';
 import 'package:backup_app/Widgets/CommonWidgets.dart';
 import 'package:easy_permission_validator/easy_permission_validator.dart';
+import 'package:flutter/foundation.dart';
+// import 'package:flutter/scheduler.dart';/
 import 'package:path/path.dart' as Path;
 import 'package:http/http.dart' as http;
 import 'package:backup_app/Controls/Constants.dart';
 import 'package:ext_storage/ext_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:velocity_x/velocity_x.dart';
+
+List fun(Map<dynamic,dynamic> map){
+  List<FileSystemEntity> fsList=List();
+  for (int i = 0; i < map["tempFsList"].length; i++) {
+    bool exist = false;
+    for (int j = 0; j < map["images"].length; j++) {
+      if (Path.basename(map["tempFsList"][i].path) == map["images"][j]) exist = true;
+    }
+    if (!exist) fsList.add(map["tempFsList"][i]);
+  }
+  fsList.sort(
+          (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+  return fsList;
+}
 
 class ImageGalleryWidget extends StatefulWidget {
   final String title;
@@ -27,34 +43,47 @@ class ImageGalleryWidget extends StatefulWidget {
 
 class _ImageGalleryWidgetState extends State<ImageGalleryWidget>
     with AutomaticKeepAliveClientMixin<ImageGalleryWidget> {
-  List<dynamic> images;
+  List<dynamic> files;
   var cameraPath;
-  List<FileSystemEntity> fsList = List<FileSystemEntity>();
+  List fsList = List();
   Future _getLocal;
 
+  // static void fun(){
+  //
+  // }
   Future getFiles()async{
     try {
-      List<FileSystemEntity> tempFsList  =await Directory(cameraPath).list().toList() ;
+      // compute
+      // SchedulerBinding.instance.`
+      List<FileSystemEntity> tempFsList  = await Directory(cameraPath).list().toList() ;
+      List finalList =await compute(fun,{
+        "images":files,
+        "tempFsList":tempFsList
+      });
+      // print(finalList[0].path);
+      tempFsList.clear();
+      fsList=finalList;
+
          // = List<FileSystemEntity>();
-      for (int i = 0; i < tempFsList.length; i++) {
-        bool exist = false;
-        for (int j = 0; j < images.length; j++) {
-          if (Path.basename(tempFsList[i].path) == images[j]) exist = true;
-        }
-        if (!exist) fsList.add(tempFsList[i]);
-      }
+      // for (int i = 0; i < tempFsList.length; i++) {
+      //   bool exist = false;
+      //   for (int j = 0; j < files.length; j++) {
+      //     if (Path.basename(tempFsList[i].path) == files[j]) exist = true;
+      //   }
+      //   if (!exist) fsList.add(tempFsList[i]);
+      // }
       // print(fsList.length);
-      fsList.sort(
-              (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+
       return true;
     }  catch (e) {
+      print(e);
       throw Exception("he");
     }
   }
   Future getImagesLocally() async {
     try {
       http.Response res = await http.get(serverUrl + widget.serverPath);
-      images = JsonDecoder().convert(res.body);
+      files = JsonDecoder().convert(res.body);
       cameraPath = await ExtStorage.getExternalStorageDirectory();
       // print(cameraPath);
       cameraPath += widget.filePath;
@@ -225,7 +254,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget>
                       childAspectRatio: itemWidth / itemHeight,
                       crossAxisCount: 2,
                       children: List.generate(
-                        images.length,
+                        files.length,
                         (index) => Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: ClipRRect(
@@ -233,11 +262,11 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                (Path.extension(images[index]) != '.jpg')
+                                (Path.extension(files[index]) != '.jpg')
                                     ? VideoBoxWidget(
                                         itemHeight: itemHeight,
                                         size: size,
-                                        path: images[index],
+                                        path: files[index],
                                         canOpen: false)
                                     : InkWell(
                                         onTap: () {
@@ -246,7 +275,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget>
                                             MaterialPageRoute(
                                               builder: (_) => FullScreenImage(
                                                 path:
-                                                    "$cameraPath/${images[index]}",
+                                                    "$cameraPath/${files[index]}",
                                                 heroTag: "Hero$index#",
                                                 canUpload: false,
                                               ),
@@ -257,7 +286,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget>
                                           tag: "Hero$index",
                                           child: Image.file(
                                             File(
-                                                "$cameraPath/${images[index]}"),
+                                                "$cameraPath/${files[index]}"),
                                             errorBuilder:
                                                 (context, exc, trace) =>
                                                     errorBuilder(
@@ -281,7 +310,7 @@ class _ImageGalleryWidgetState extends State<ImageGalleryWidget>
                                   textSize: 13,
                                   left: true,
                                   text: Path.basename(
-                                    images[index],
+                                    files[index],
                                   ),
                                   isRound: false,
                                 ),
