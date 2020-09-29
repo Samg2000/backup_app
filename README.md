@@ -1,6 +1,21 @@
-# backup_app
+# Flare Shot
 
 My personal backup app
+
+It uses http multipart request to upload files to server.
+
+Features:-
+
+1> Option to backup files from most common folders to pc.
+
+2> Option to send individual files within a folder.
+
+3> Option to send all files from a folder to pc with a single click.
+
+5> Can send files received from other apps using receive_sharing_intent package.
+
+4> Configurable server url...
+
 
 ## Getting Started
 
