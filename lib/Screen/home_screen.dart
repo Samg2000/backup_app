@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
     else
       return UploadEveryImageFromMediaFile(
         images: _sharedFiles,
-        serverPath: MisServerUrl + "/Shared",
+        serverPath: MisServerUrl,
       );
   }
 
